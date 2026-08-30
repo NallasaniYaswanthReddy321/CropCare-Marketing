@@ -1,0 +1,66 @@
+{
+  "features": [
+    "quality_score",
+    "grade_a",
+    "grade_c",
+    "log_arrivals_ratio",
+    "demand_index",
+    "seasonality",
+    "fuel_index",
+    "distance_km",
+    "moisture_excess",
+    "festival",
+    "ref_price"
+  ],
+  "crops": {
+    "tomato": [
+      1800,
+      80
+    ],
+    "wheat": [
+      2300,
+      140
+    ],
+    "rice": [
+      2100,
+      190
+    ],
+    "onion": [
+      1500,
+      60
+    ],
+    "potato": [
+      1200,
+      20
+    ],
+    "cotton": [
+      7000,
+      240
+    ],
+    "chilli": [
+      9000,
+      110
+    ],
+    "maize": [
+      1900,
+      170
+    ],
+    "banana": [
+      1400,
+      0
+    ],
+    "grape": [
+      5500,
+      300
+    ]
+  },
+  "residual_sigma": 0.12302319467948315,
+  "metrics": {
+    "r2": 0.9795,
+    "mape": 0.0967,
+    "n_train": 14592,
+    "n_test": 3648
+  },
+  "version": "2.3.0",
+  "algo": "GradientBoostingRegressor(320, lr=0.06, depth=3) on log price"
+}

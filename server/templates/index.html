@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="hero">
+  <div>
+    <h1>Take a photo. Get an honest price.</h1>
+    <p>Photograph your produce or a sick leaf. This computer looks at it here — nothing is uploaded anywhere —
+       gives it a quality grade, then tells you a <b>price range</b> and which market leaves the most money
+       in your hand after transport and spoilage.</p>
+    <div class="chips">
+      <span class="chip">Model {{ meta.name }} v{{ meta.version }}</span>
+      <span class="chip">R² {{ meta.r2 }}</span>
+      <span class="chip">Average error {{ '%.1f'|format(meta.mape * 100) }}%</span>
+      <span class="chip">{{ meta.trained_rows }} market records</span>
+    </div>
+  </div>
+  <img src="{{ url_for('static', filename='img/hero_farm.png') }}" alt="Illustration of a pastel farm at sunrise">
+</section>
+
+{% if error %}<div class="banner danger">{{ error }}</div>{% endif %}
+
+<form class="card form" method="post" action="{{ url_for('analyze') }}" enctype="multipart/form-data">
+  <h2>1 · Your photo</h2>
+  <div class="grid">
+    <label class="drop" id="drop">
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required id="photo">
+      <span id="dropLabel">
+        <b>Tap to choose a photo</b><br>
+        <small>Stand in shade, fill about half the picture, plain background.<br>
+        JPEG / PNG / WebP · up to 8 MB · checked for malware</small>
+      </span>
+      <img id="preview" alt="">
+    </label>
+
+    <div class="fields">
+      <label>What do you want to know?
+        <select name="kind">
+          <option value="quality">What price will I get? (produce)</option>
+          <option value="disease">What is wrong with my plant? (leaf)</option>
+        </select>
+      </label>
+
+      <label>How much do you have? (quintal)
+        <input type="number" name="quantity" value="20" min="0.5" step="0.5">
+      </label>
+
+      <label>How will you carry it?
+        <select name="vehicle">
+          {% for v in vehicles %}<option value="{{ v.id }}">{{ v.name }} · ₹{{ v.rate_per_km }}/km</option>{% endfor %}
+        </select>
+      </label>
+
+      <label class="inline"><input type="checkbox" name="cooling"> I have cold storage</label>
+
+      <button class="primary" type="submit">Tell me the price</button>
+      <small class="muted">You get a price <b>range</b>, never a fixed promise — and never a lab claim from a photo.</small>
+    </div>
+  </div>
+
+  <h2 style="margin-top:22px">2 · Which crop?</h2>
+  <div class="croppick">
+    {% for key, spec in crops.items() %}
+    <label>
+      <img src="{{ url_for('static', filename='img/crop_' ~ key ~ '.png') }}" alt="{{ spec.name }}">
+      <input type="radio" name="crop" value="{{ key }}" {% if loop.first %}checked{% endif %}>
+      <span>{{ spec.name }}</span>
+    </label>
+    {% endfor %}
+  </div>
+</form>
+
+<section class="card">
+  <h2>What happens to your photo</h2>
+  <div class="tilegrid">
+    {% for img, title, text in [
+      ('tile_scan', 'It is measured', 'Colour, size, shape, blemishes and damage are measured on this machine.'),
+      ('tile_price', 'It is graded', 'Quality score 0–100 and Grade A, B or C, with the reason written in plain words.'),
+      ('tile_market', 'It is priced', 'A price range from the trained model — plus which market pays most after costs.'),
+      ('tile_water', 'It is your data', 'The photo stays in uploads/ on this machine. No cloud, no third party.')
+    ] %}
+    <div class="tile">
+      <img src="{{ url_for('static', filename='img/' ~ img ~ '.png') }}" alt="">
+      <div><b>{{ title }}</b><small>{{ text }}</small></div>
+    </div>
+    {% endfor %}
+  </div>
+  <ol class="steps">
+    <li><b>Segment</b> — RGB→HSV, background model from the frame border, Otsu threshold, morphological opening, largest connected component.</li>
+    <li><b>Measure</b> — ripe-hue fraction, blemish ratio, Sobel damage index, 8×8 uniformity cells, size fraction, circularity, aspect.</li>
+    <li><b>Grade</b> — weighted composite → Quality Score 0–100 → Grade A/B/C with a written explanation of the biggest deduction.</li>
+    <li><b>Price</b> — <code>price_model.pkl</code> predicts log price; the 80% band comes from the model's residual σ, widened when photo evidence is weak.</li>
+    <li><b>Rank</b> — every mandi scored on <b>net</b> value: gross − transport − commission − transit loss, payment lag shown.</li>
+    <li><b>Decide</b> — sell today / hold 2 days / hold 5 days, with quality decay, storage cost and falling confidence.</li>
+  </ol>
+</section>
+
+{% if scans %}
+<section class="card">
+  <h2>Your recent checks</h2>
+  <table>
+    <thead><tr><th>When</th><th>Crop</th><th>Type</th><th>Score</th><th>Range ₹/q</th><th>Best net</th><th></th></tr></thead>
+    <tbody>
+    {% for s in scans %}
+      <tr>
+        <td>{{ s.created_at | int | timestamp }}</td>
+        <td>{{ s.crop }}</td>
+        <td>{{ 'Price' if s.kind == 'quality' else 'Plant' }}</td>
+        <td>{{ s.score }}{% if s.grade %} · {{ s.grade }}{% endif %}</td>
+        <td>{% if s.price_low %}{{ s.price_low }}–{{ s.price_high }}{% else %}—{% endif %}</td>
+        <td>{% if s.best_net %}₹{{ '{:,}'.format(s.best_net) }} · {{ s.best_mandi }}{% else %}—{% endif %}</td>
+        <td><a class="link" href="{{ url_for('result', scan_id=s.id) }}">open</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

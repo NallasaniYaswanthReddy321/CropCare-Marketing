@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block body %}
+<a class="link" href="{{ url_for('index') }}">← new analysis</a>
+
+{% if p.kind == 'quality' %}
+{% set q = p.quality %}{% set pr = p.price %}{% set sim = p.simulator %}
+
+<div class="answer {{ 'ok' if q.grade == 'A' else ('info' if q.grade == 'B' else 'warn') }}">
+  <img src="{{ url_for('static', filename='img/crop_' ~ p.crop ~ '.png') }}" alt="{{ q.crop_name }}">
+  <div>
+    <h2>Grade {{ q.grade }} · about ₹{{ '{:,}'.format(pr.mid) }} per quintal</h2>
+    <p>Your {{ q.crop_name|lower }} scored <b>{{ q.score }}/100</b>. Expect ₹{{ '{:,}'.format(pr.low) }}–₹{{ '{:,}'.format(pr.high) }} per quintal.
+       Best market: <b>{{ p.markets[0].mandi.name }}</b> — about ₹{{ '{:,}'.format(p.markets[0].net) }} in your hand for {{ pr.quantity_q }} quintal
+       after transport, commission and {{ p.markets[0].loss_pct }}% spoilage. This is an <b>estimate</b>, not a fixed price.</p>
+  </div>
+</div>
+
+<section class="split">
+  <div class="card photo">
+    <img src="{{ url_for('uploaded', name=row.filename) }}" alt="analysed produce">
+    <div class="heat">
+      {% for r in q.heat %}<div class="heatrow">{% for v in r %}<i style="opacity:{{ v }}"></i>{% endfor %}</div>{% endfor %}
+    </div>
+    <p class="muted">Defect activation map · {{ q.heat|length }}×{{ q.heat|length }} cells · {{ q.ms }} ms</p>
+  </div>
+  <div class="card">
+    <h1 class="grade grade-{{ q.grade }}">Grade {{ q.grade }} · {{ q.score }}/100</h1>
+    <p class="muted">{{ q.crop_name }} · {{ q.ripeness_pct }}% ripe hue · defects {{ q.defect_pct }}% · damage {{ q.damage_pct }}% · uniformity {{ (q.uniformity * 100) | round | int }}%</p>
+    {% for s in q.subs %}
+    <div class="bar-row">
+      <span>{{ s.label }}</span>
+      <div class="bar"><i style="width: {{ s.score }}%"></i></div>
+      <b>{{ s.score }}</b>
+    </div>
+    <p class="detail">{{ s.detail }}</p>
+    {% endfor %}
+    <ul class="explain">{% for e in q.explanation %}<li>{{ e }}</li>{% endfor %}</ul>
+    <div class="banner warn">{{ q.caveat }}</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Price range <small>(AI estimate — not a guaranteed price)</small></h2>
+  <div class="range">
+    <span>₹{{ '{:,}'.format(pr.low) }}</span>
+    <b>₹{{ '{:,}'.format(pr.mid) }}</b>
+    <span>₹{{ '{:,}'.format(pr.high) }}</span>
+  </div>
+  <p class="muted">80% prediction interval per quintal · confidence {{ pr.confidence }}% ·
+     gross for {{ pr.quantity_q }} q: ₹{{ '{:,}'.format(pr.gross_low) }} – ₹{{ '{:,}'.format(pr.gross_high) }}</p>
+  <table>
+    <thead><tr><th>Driver</th><th>Effect</th><th>Why</th></tr></thead>
+    <tbody>{% for d in pr.drivers %}<tr><td>{{ d.label }}</td>
+      <td class="{{ 'pos' if d.effect_pct >= 0 else 'neg' }}">{{ '%+.1f'|format(d.effect_pct) }}%</td>
+      <td class="muted">{{ d.note }}</td></tr>{% endfor %}</tbody>
+  </table>
+  <div class="banner warn">{{ pr.disclaimer }}</div>
+</section>
+
+<section class="card">
+  <h2>Markets ranked by NET value</h2>
+  <table>
+    <thead><tr><th>#</th><th>Mandi</th><th>Price/q</th><th>Gross</th><th>Transport</th><th>Commission</th><th>Loss</th><th>Net</th><th>Pays in</th></tr></thead>
+    <tbody>
+    {% for m in p.markets %}
+      <tr class="{{ 'best' if m.rank == 1 else '' }}">
+        <td>{{ m.rank }}</td>
+        <td>{{ m.mandi.name }}<br><small class="muted">{{ m.mandi.distance_km }} km · {{ m.hours }} h</small></td>
+        <td>₹{{ '{:,}'.format(m.price_per_q) }}</td>
+        <td>₹{{ '{:,}'.format(m.gross) }}</td>
+        <td class="neg">−₹{{ '{:,}'.format(m.transport) }}</td>
+        <td class="neg">−₹{{ '{:,}'.format(m.commission) }}</td>
+        <td class="neg">{{ m.loss_pct }}%</td>
+        <td><b>₹{{ '{:,}'.format(m.net) }}</b></td>
+        <td>{{ m.payment_days }} d</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Sell now or hold? <small>(AI estimate)</small></h2>
+  <div class="cards3">
+    {% for o in sim.options %}
+    <div class="mini {{ 'best' if o.horizon == sim.best else '' }}">
+      <h3>{{ o.label }}</h3>
+      <b>₹{{ '{:,}'.format(o.expected_net) }}</b>
+      <p class="muted">₹{{ o.low_price }}–{{ o.high_price }}/q · grade {{ o.grade }} ({{ o.quality_score }}/100)</p>
+      <p class="muted">spoilage {{ o.spoil_loss_pct }}% · storage ₹{{ '{:,}'.format(o.storage_cost) }} · confidence {{ o.confidence }}%</p>
+      <p>{{ o.verdict }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="banner">{{ sim.note }}</div>
+</section>
+
+{% else %}
+{% set d = p.disease %}
+
+<div class="answer {{ 'warn' if d.top.severity != 'low' else 'ok' }}">
+  <img src="{{ url_for('static', filename='img/tile_doctor.png') }}" alt="">
+  <div>
+    <h2>{{ d.top.name }} · {{ (d.top.score * 100) | round | int }}% likely</h2>
+    <p>{{ d.top.action }} Start with the cheap option: <b>{{ d.top.organic }}</b></p>
+  </div>
+</div>
+
+<section class="split">
+  <div class="card photo">
+    <img src="{{ url_for('uploaded', name=row.filename) }}" alt="analysed leaf">
+    <div class="heat">
+      {% for r in d.heat %}<div class="heatrow">{% for v in r %}<i style="opacity:{{ v }}"></i>{% endfor %}</div>{% endfor %}
+    </div>
+    <p class="muted">Grad-CAM style activation · {{ d.model }} · {{ d.ms }} ms</p>
+  </div>
+  <div class="card">
+    <h1>{{ d.top.name }}</h1>
+    <p class="muted">{{ d.top.evidence }} · leaf covers {{ (d.leaf_fraction * 100) | round | int }}% of the frame</p>
+    {% for l in d.labels %}
+    <div class="bar-row">
+      <span>{{ l.name }}</span>
+      <div class="bar"><i style="width: {{ (l.score * 100) | round | int }}%"></i></div>
+      <b>{{ (l.score * 100) | round | int }}%</b>
+    </div>
+    {% endfor %}
+    <div class="banner ok"><b>Organic first:</b> {{ d.top.organic }}</div>
+    <div class="banner warn"><b>Chemical option:</b> {{ d.top.chemical }}</div>
+    <p>{{ d.top.action }}</p>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}CropCare · AgriPrice{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="leaf">🌿</span>
+      <span>CropCare <em>· AgriPrice engine</em></span>
+    </a>
+    <nav>
+      <a href="{{ url_for('index') }}">Analyse</a>
+      <a href="{{ url_for('markets_page') }}">Markets</a>
+      <a href="{{ url_for('history') }}">History</a>
+      <a href="{{ url_for('security_page') }}">Security</a>
+      <a href="{{ url_for('docs') }}">API</a>
+    </nav>
+  </header>
+
+  <main>{% block body %}{% endblock %}</main>
+
+  <footer>
+    <p><strong>Honesty contract.</strong> Photographs give visual evidence only. CropCare never claims moisture,
+      brix, pesticide residue or internal defects from an image, and every price is an estimated RANGE — never a
+      guaranteed price.</p>
+    <p class="muted">100% free / open-source stack · Flask · SQLite · NumPy · scikit-learn · Pillow · AGPL-3.0</p>
+  </footer>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

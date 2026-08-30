@@ -1,0 +1,99 @@
+name: CropCare CI — acceptance gates
+
+# Deployment fails on ANY security, correctness or performance regression.
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+
+jobs:
+  typecheck:
+    name: Gate 1 · TypeScript correctness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm }
+      - run: npm ci
+      - name: Typecheck (zero errors required)
+        run: npx tsc --noEmit -p tsconfig.json
+
+  server:
+    name: Gate 2 · Python unit + realtime + security suites
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r server/requirements.txt pytest-cov
+      - name: Train the price model
+        run: cd server && python train_model.py
+      - name: Run suites with coverage gate (>= 80%)
+        run: |
+          cd server
+          python -m pytest tests/ -q \
+            --cov=. --cov-report=term-missing \
+            --cov-fail-under=80
+      - name: Security checklist must pass
+        run: |
+          cd server
+          python - <<'PY'
+          import app, json
+          app.app.config['TESTING'] = True
+          app._BUCKETS.clear()
+          c = app.app.test_client()
+          fails = []
+
+          # WAF blocks injection
+          if c.post('/api/v1/price', json={'crop': "x' UNION SELECT 1--"}).status_code != 403:
+              fails.append('WAF did not block SQL injection')
+          # SSRF allowlist blocks link-local metadata
+          if c.post('/api/v1/egress-check', json={'url': 'http://169.254.169.254/'}).get_json()['allow']:
+              fails.append('SSRF allowlist let link-local through')
+          # Security headers present
+          h = c.get('/').headers
+          for k in ('Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options', 'Strict-Transport-Security'):
+              if k not in h:
+                  fails.append(f'missing header {k}')
+          # Audit chain intact
+          if not c.get('/api/v1/audit').get_json()['ok']:
+              fails.append('audit chain broken')
+          # Unsigned webhook rejected
+          if c.post('/api/v1/webhooks/receive', data='{}', content_type='application/json').status_code == 200:
+              fails.append('unsigned webhook accepted')
+
+          if fails:
+              print('SECURITY GATE FAILED:'); [print(' -', f) for f in fails]; raise SystemExit(1)
+          print('security checklist passed')
+          PY
+
+  e2e:
+    name: Gate 3 · Playwright end-to-end
+    runs-on: ubuntu-latest
+    needs: [typecheck, server]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build the shipping artefact
+        run: npx expo export --platform all
+      - name: Performance gate — web bundle under 4 MB
+        run: |
+          SIZE=$(du -sk dist/_expo/static/js/web | cut -f1)
+          echo "web bundle ${SIZE} KB"
+          if [ "$SIZE" -gt 4096 ]; then echo "PERF GATE FAILED: bundle over 4 MB"; exit 1; fi
+      - name: Run acceptance suite
+        run: npx playwright test --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: test-results/, retention-days: 7 }
+
+  deploy:
+    name: Deploy (only if every gate is green)
+    runs-on: ubuntu-latest
+    needs: [typecheck, server, e2e]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "All gates green — safe to release."

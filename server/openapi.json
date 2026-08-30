@@ -1,0 +1,122 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CropCare / AgriPrice API",
+    "version": "1.0.0",
+    "description": "Photo \u2192 visual quality grade \u2192 price RANGE (never a guaranteed price) \u2192 net-value market ranking \u2192 sell/hold simulator. All inference runs locally; no image is sent to a third party."
+  },
+  "servers": [{ "url": "http://127.0.0.1:5000" }],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Liveness, model metadata and audit-chain verification",
+        "responses": { "200": { "description": "Service healthy" } }
+      }
+    },
+    "/api/v1/model": {
+      "get": {
+        "summary": "price_model.pkl metadata (algorithm, R\u00b2, MAPE, residual sigma)",
+        "responses": { "200": { "description": "Model card" } }
+      }
+    },
+    "/api/v1/analyze": {
+      "post": {
+        "summary": "Analyse a produce or leaf photo (multipart/form-data)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": { "type": "string", "format": "binary" },
+                  "crop": { "type": "string", "example": "tomato" },
+                  "kind": { "type": "string", "enum": ["quality", "disease"] },
+                  "quantity": { "type": "number", "example": 20 },
+                  "vehicle": { "type": "string", "example": "tempo" },
+                  "cooling": { "type": "boolean" }
+                },
+                "required": ["photo"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Quality score, grade, explanation, price range, ranked markets, simulator" },
+          "400": { "description": "Upload rejected by the malware/magic-byte scanner" },
+          "429": { "description": "Rate limited" }
+        }
+      }
+    },
+    "/api/v1/price": {
+      "post": {
+        "summary": "Price range for a given quality score and market context",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "crop": { "type": "string" },
+                  "quality_score": { "type": "number" },
+                  "grade": { "type": "string", "enum": ["A", "B", "C"] },
+                  "quantity_q": { "type": "number" },
+                  "arrivals_t": { "type": "number" },
+                  "demand_index": { "type": "number" },
+                  "distance_km": { "type": "number" },
+                  "moisture_pct": { "type": "number" },
+                  "festival": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "low / mid / high price per quintal, gross value and driver decomposition" },
+          "422": { "description": "Invalid parameters" }
+        }
+      }
+    },
+    "/api/v1/markets": {
+      "post": {
+        "summary": "Rank mandis by NET value (gross \u2212 transport \u2212 commission \u2212 transit loss)",
+        "responses": { "200": { "description": "Ranked market list" } }
+      }
+    },
+    "/api/v1/sell-simulator": {
+      "post": {
+        "summary": "Sell today / hold 2 days / hold 5 days comparison (AI estimate)",
+        "responses": { "200": { "description": "Three horizons with expected net, spoilage and confidence" } }
+      }
+    },
+    "/api/v1/scans": {
+      "get": {
+        "summary": "Recent analyses stored on this node",
+        "responses": { "200": { "description": "Scan list without payload blobs" } }
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "summary": "Verify the hash-chained audit log",
+        "responses": { "200": { "description": "{ ok, broken_at, blocks }" } }
+      }
+    },
+    "/api/v1/egress-check": {
+      "post": {
+        "summary": "SSRF allowlist decision for an outbound URL",
+        "responses": { "200": { "description": "{ allow, reason }" } }
+      }
+    },
+    "/api/v1/webhooks/receive": {
+      "post": {
+        "summary": "HMAC-signed webhook receiver (X-Signature: t=<ms>,v1=<hmac>)",
+        "responses": {
+          "200": { "description": "Accepted" },
+          "400": { "description": "Malformed header or replay window exceeded" },
+          "401": { "description": "Signature mismatch" }
+        }
+      }
+    }
+  }
+}

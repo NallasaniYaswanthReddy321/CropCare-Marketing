@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Market comparison</h1>
+  <form method="get" class="row">
+    <label>Crop
+      <select name="crop">{% for k, s in crops.items() %}<option value="{{ k }}" {{ 'selected' if k == crop }}>{{ s.name }}</option>{% endfor %}</select>
+    </label>
+    <label>Quality <input type="number" name="quality" value="{{ quality | int }}" min="5" max="99"></label>
+    <label>Grade
+      <select name="grade">{% for g in ['A','B','C'] %}<option value="{{ g }}" {{ 'selected' if g == grade }}>{{ g }}</option>{% endfor %}</select>
+    </label>
+    <label>Quantity (q) <input type="number" name="quantity" value="{{ quantity | int }}" min="1"></label>
+    <label>Vehicle
+      <select name="vehicle">{% for v in vehicles %}<option value="{{ v.id }}" {{ 'selected' if v.id == vehicle }}>{{ v.name }}</option>{% endfor %}</select>
+    </label>
+    <button class="primary" type="submit">Recalculate</button>
+  </form>
+  <div class="range">
+    <span>₹{{ '{:,}'.format(price.low) }}</span><b>₹{{ '{:,}'.format(price.mid) }}</b><span>₹{{ '{:,}'.format(price.high) }}</span>
+  </div>
+  <p class="muted">{{ price.disclaimer }}</p>
+</section>
+
+<section class="card">
+  <h2>Ranked by net value</h2>
+  <table>
+    <thead><tr><th>#</th><th>Mandi</th><th>Price/q</th><th>Gross</th><th>Transport</th><th>Commission</th><th>Loss</th><th>Net</th><th>vs best</th></tr></thead>
+    <tbody>
+    {% for m in markets %}
+      <tr class="{{ 'best' if m.rank == 1 else '' }}">
+        <td>{{ m.rank }}</td><td>{{ m.mandi.name }}</td><td>₹{{ '{:,}'.format(m.price_per_q) }}</td>
+        <td>₹{{ '{:,}'.format(m.gross) }}</td><td class="neg">−₹{{ '{:,}'.format(m.transport) }}</td>
+        <td class="neg">−₹{{ '{:,}'.format(m.commission) }}</td><td class="neg">{{ m.loss_pct }}%</td>
+        <td><b>₹{{ '{:,}'.format(m.net) }}</b></td>
+        <td class="muted">{{ '₹{:,}'.format(m.delta_vs_best) if m.delta_vs_best else '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Sell now or hold?</h2>
+  <div class="cards3">
+    {% for o in sim.options %}
+    <div class="mini {{ 'best' if o.horizon == sim.best else '' }}">
+      <h3>{{ o.label }}</h3><b>₹{{ '{:,}'.format(o.expected_net) }}</b>
+      <p class="muted">grade {{ o.grade }} · spoilage {{ o.spoil_loss_pct }}%</p>
+      <p>{{ o.verdict }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="banner">{{ sim.note }}</div>
+</section>
+{% endblock %}

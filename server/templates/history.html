@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>History</h1>
+  <p class="muted">Audit chain: {{ audit.blocks }} blocks ·
+    {% if audit.ok %}<span class="pos">intact — every block commits to its predecessor</span>
+    {% else %}<span class="neg">broken at block {{ audit.broken_at }}</span>{% endif %}</p>
+  <table>
+    <thead><tr><th>When</th><th>Kind</th><th>Crop</th><th>Score</th><th>Range ₹/q</th><th>Best net</th><th>SHA-256</th><th></th></tr></thead>
+    <tbody>
+    {% for s in scans %}
+      <tr>
+        <td>{{ s.created_at | int | timestamp }}</td><td>{{ s.kind }}</td><td>{{ s.crop }}</td>
+        <td>{{ s.score }}{% if s.grade %} · {{ s.grade }}{% endif %}</td>
+        <td>{% if s.price_low %}{{ s.price_low }}–{{ s.price_high }}{% else %}—{% endif %}</td>
+        <td>{% if s.best_net %}₹{{ '{:,}'.format(s.best_net) }}{% else %}—{% endif %}</td>
+        <td class="mono muted">{{ s.sha256[:16] }}…</td>
+        <td><a class="link" href="{{ url_for('result', scan_id=s.id) }}">open</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="muted">No analyses yet — upload a photo on the home page.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

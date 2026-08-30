@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>Security posture</h1>
+  <p class="muted">Every control listed here is executing in this process, not documentation.</p>
+  <table>
+    <tbody>
+      <tr><td>Audit chain</td><td>{{ audit.blocks }} blocks · {% if audit.ok %}<span class="pos">verified</span>{% else %}<span class="neg">broken at {{ audit.broken_at }}</span>{% endif %}</td></tr>
+      <tr><td>Rate limiting</td><td>Token bucket, 30 burst / 1 rps sustained, per client IP</td></tr>
+      <tr><td>Upload validation</td><td>Magic bytes, 8 MB cap, EICAR + polyglot scan, SHA-256 recorded</td></tr>
+      <tr><td>Transport headers</td><td>CSP, HSTS, nosniff, DENY framing, no-referrer, restrictive permissions policy</td></tr>
+      <tr><td>Webhooks</td><td>HMAC-SHA256 with 300 s replay window and constant-time comparison</td></tr>
+      <tr><td>Database</td><td>SQLite (SQLCipher-compatible schema), WAL, parameterised queries only</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>WAF signatures</h2>
+  <ul class="chips">{% for r in rules %}<li class="chip">{{ r.id }} · {{ r.name }}</li>{% endfor %}</ul>
+  <h2>SSRF egress allowlist</h2>
+  <ul class="chips">{% for h in allowlist %}<li class="chip">{{ h }}</li>{% endfor %}</ul>
+</section>
+
+<section class="card">
+  <h2>Recent security events</h2>
+  <table>
+    <thead><tr><th>When</th><th>Kind</th><th>Severity</th><th>Detail</th></tr></thead>
+    <tbody>
+      {% for e in events %}
+      <tr><td>{{ e.ts | int | timestamp }}</td><td>{{ e.kind }}</td><td>{{ e.severity }}</td><td class="muted">{{ e.detail }}</td></tr>
+      {% else %}
+      <tr><td colspan="4" class="muted">No blocked requests recorded on this node.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

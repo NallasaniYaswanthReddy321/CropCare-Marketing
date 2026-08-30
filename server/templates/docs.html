@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card">
+  <h1>{{ spec.info.title }} <small>v{{ spec.info.version }}</small></h1>
+  <p class="muted">{{ spec.info.description }}</p>
+  <p><a class="link" href="{{ url_for('openapi') }}">openapi.json</a> — import into any OpenAPI 3 viewer (offline).</p>
+</section>
+{% for path, methods in spec.paths.items() %}
+<section class="card">
+  <h2 class="mono">{{ path }}</h2>
+  {% for verb, op in methods.items() %}
+  <p><b class="verb {{ verb }}">{{ verb | upper }}</b> — {{ op.summary }}</p>
+  {% if op.requestBody %}<pre class="mono">{{ op.requestBody | tojson(indent=2) }}</pre>{% endif %}
+  <pre class="mono">{{ op.responses | tojson(indent=2) }}</pre>
+  {% endfor %}
+</section>
+{% endfor %}
+{% endblock %}

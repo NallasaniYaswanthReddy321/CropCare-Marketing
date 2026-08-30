@@ -1,0 +1,17 @@
+services:
+  cropcare:
+    build: .
+    image: cropcare/agriprice:1.0.0
+    ports:
+      - "5000:5000"
+    environment:
+      CROPCARE_SECRET: change-me-in-production
+      CROPCARE_WEBHOOK_SECRET: whsec_village_edge
+      CROPCARE_DB: /data/cropcare.db
+    volumes:
+      - cropcare-data:/data
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  cropcare-data:
