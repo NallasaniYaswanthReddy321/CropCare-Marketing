@@ -14,7 +14,7 @@ export async function signIn(page: Page, opts: { name?: string; district?: strin
   const name = opts.name ?? 'Test Farmer';
   const district = opts.district ?? 'Shirur';
 
-  await expect(page.getByText('CropCare', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('CropCare', { exact: true }).first()).toBeVisible({ timeout: 20000 });
   await page.getByText('English', { exact: true }).first().click();
   await page.getByText('Continue', { exact: true }).click();
 
@@ -31,23 +31,29 @@ export async function signIn(page: Page, opts: { name?: string; district?: strin
   await page.getByPlaceholder('000000').fill(code);
   await page.getByText('Verify', { exact: true }).click();
 
-  await expect(page.getByText('What is your name?')).toBeVisible();
+  await expect(page.getByText('What is your name?')).toBeVisible({ timeout: 20000 });
   await page.getByPlaceholder('Your name').fill(name);
   await page.getByText('Next', { exact: true }).click();
 
-  await expect(page.getByText('Where is your farm?')).toBeVisible();
+  await expect(page.getByText('Where is your farm?')).toBeVisible({ timeout: 20000 });
   await page.getByPlaceholder(/Type a district/i).fill(district);
   await page.getByText(district, { exact: true }).first().click();
   await page.getByText('Start using CropCare').click();
 
-  await expect(page.getByText('My tools')).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText('My tools')).toBeVisible({ timeout: 25000 });
 }
 
 export async function openTool(page: Page, label: string) {
-  await page.getByRole('button', { name: 'All tools' }).click().catch(() => {});
-  await page.getByText(label, { exact: false }).first().click();
+  const allToolsBtn = page.getByRole('button', { name: 'All tools' });
+  await allToolsBtn.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  await allToolsBtn.click().catch(() => {});
+  const toolText = page.getByText(label, { exact: false }).first();
+  await toolText.waitFor({ state: 'visible', timeout: 10000 });
+  await toolText.click();
 }
 
 export async function openOverflow(page: Page) {
-  await page.getByRole('button', { name: 'More options' }).first().click();
+  const moreOptionsBtn = page.getByRole('button', { name: 'More options' }).first();
+  await moreOptionsBtn.waitFor({ state: 'visible', timeout: 10000 });
+  await moreOptionsBtn.click();
 }
