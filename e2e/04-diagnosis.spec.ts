@@ -15,7 +15,7 @@ test.describe('camera diagnosis pipeline', () => {
     await page.getByText(/Tell me the price|Grade & price/).click();
 
     await expect(page.getByText(/Grade [ABC]/).first()).toBeVisible({ timeout: 45000 });
-    await expect(page.getByText(/per quintal/).first()).toBeVisible();
+    await expect(page.getByText('per quintal', { exact: true })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Markets ranked by NET value')).toBeVisible();
     await expect(page.getByText(/AI estimate|not a guaranteed price/i).first()).toBeVisible();
   });

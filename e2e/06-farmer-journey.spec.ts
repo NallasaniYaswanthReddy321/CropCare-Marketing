@@ -15,7 +15,7 @@ test.describe('everyday farmer journey', () => {
 
   test('a farmer can add a field with the picture wizard', async ({ page }) => {
     await page.getByRole('button', { name: 'More options' }).first().click();
-    await page.getByText('Add a field').click();
+    await page.getByRole('button', { name: 'Add a field' }).click();
 
     await expect(page.getByText('What are you growing?')).toBeVisible();
     await page.getByText('Next', { exact: true }).first().click();
@@ -30,7 +30,11 @@ test.describe('everyday farmer journey', () => {
   test('a farmer can pin and unpin their own tools', async ({ page }) => {
     await page.getByText('+ ADD TOOL').click();
     await expect(page.getByText('Add tools to your home')).toBeVisible();
-    await page.getByText('Learn', { exact: false }).first().click();
+    
+    const learnBtn = page.getByRole('button').filter({ hasText: /^Learn$/ }).first();
+    await learnBtn.waitFor({ state: 'visible', timeout: 15000 });
+    await learnBtn.click();
+    
     await page.getByText('Done', { exact: true }).click();
     await expect(page.getByText('My tools')).toBeVisible();
   });

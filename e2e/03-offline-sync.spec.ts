@@ -15,14 +15,14 @@ test.describe('offline → online and CRDT convergence', () => {
 
     // The core answer must still be computed on device.
     await expect(page.getByText(/Give water today|No water needed today/)).toBeVisible();
-    await expect(page.getByText(/Best price/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Best price', exact: true })).toBeVisible();
 
     await context.setOffline(false);
   });
 
   test('writes queue in the outbox and the queue is visible', async ({ page }) => {
     await page.getByText(/things waiting to send/).first().click();
-    await expect(page.getByText('Outbox')).toBeVisible();
+    await expect(page.getByText('Outbox', { exact: true })).toBeVisible();
     await page.getByText('Queue a test operation').click();
     await expect(page.getByText('field_note')).toBeVisible();
   });

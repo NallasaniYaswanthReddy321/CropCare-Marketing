@@ -8,7 +8,9 @@ test.describe('passport verification and security gates', () => {
   });
 
   async function openAllTools(page: any) {
-    await page.getByRole('button', { name: 'All tools' }).click();
+    const allToolsBtn = page.getByRole('button', { name: 'All tools' });
+    await allToolsBtn.waitFor({ state: 'visible', timeout: 15000 });
+    await allToolsBtn.click();
   }
 
   test('the passport card renders, verifies, and detects tampering', async ({ page }) => {
