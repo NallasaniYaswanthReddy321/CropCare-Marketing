@@ -8,7 +8,7 @@
 
 **33 screens · 10 crops · 8 languages · On-device AI · Zero data leaves your server**
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Open_Now-43A047?style=for-the-badge&logo=vercel)](https://6sh198-jvwt0bm8f-arcadawebapps6.vercel.app/)
+[![Live ](https://img.shields.io/badge/🌐_Live-Open_Now-43A047?style=for-the-badge&logo=vercel)](https://6sh198-jvwt0bm8f-arcadawebapps6.vercel.app/)
 [![Expo](https://img.shields.io/badge/Expo-SDK_57-000000?style=for-the-badge&logo=expo)](https://expo.dev)
 [![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?style=for-the-badge&logo=react)](https://reactnative.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-82%25-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
@@ -403,7 +403,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
 
 **🌾 Made for the farmers who feed us**
 
-[🌐 Live Demo](https://6sh198-jvwt0bm8f-arcadawebapps6.vercel.app/) · [🐛 Report Bug](../../issues) · [✨ Request Feature](../../issues)
+[🌐 Live](https://6sh198-jvwt0bm8f-arcadawebapps6.vercel.app/) · [🐛 Report Bug](../../issues) · [✨ Request Feature](../../issues)
 
 **⭐ Star this repo if it helped you!**
 
